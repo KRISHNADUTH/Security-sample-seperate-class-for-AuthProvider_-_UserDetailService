@@ -1,8 +1,11 @@
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Getter @Setter
@@ -17,6 +20,12 @@ public class Authority {
 
     @ManyToOne
     @JoinColumn(name="customer_id")
+    @JsonBackReference
     private Customer customer;
+
+    @Override
+    public String toString() {
+        return "Authority [id=" + id + ", name=" + name + "]";
+    }
 
 }

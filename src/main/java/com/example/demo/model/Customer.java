@@ -3,6 +3,7 @@ package com.example.demo.model;
 import java.util.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
@@ -45,6 +46,7 @@ public class Customer {
     private Date createDt;
 
     @OneToMany(mappedBy = "customer", fetch = FetchType.EAGER)
+    @JsonManagedReference
     @JsonIgnore
     private Set<Authority> authorities;
 }

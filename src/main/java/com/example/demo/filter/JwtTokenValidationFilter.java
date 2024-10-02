@@ -36,7 +36,7 @@ public class JwtTokenValidationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         System.out.println("JwtTokenValidationFilter isssss caaaaaaaaaaaaaaaaaaaaaaaalllllllllleddddddddddddddd");
         String jwt = request.getHeader(ApplicationConstants.JWT_HEADER);
-        if (jwt != null) {
+        if (jwt != null && !jwt.substring(0, 5).equalsIgnoreCase("Basic")) {
             Environment env = getEnvironment();
             try {
                 if (env != null) {

@@ -28,6 +28,7 @@ public class EazyBankUserDetailService implements UserDetailsService{
             throw new UsernameNotFoundException("User with given email id not present in the DB");
         });
         List<GrantedAuthority> authorities = customer.getAuthorities().stream().map(auth -> new SimpleGrantedAuthority(auth.getName())).collect(Collectors.toList());
+        System.out.println("RETRIVED CUSTOMERRRRR DETAILESS In EazyBankUserDetailService ================>>>>>>>>>>>>> "+customer);
         return new User(customer.getEmail(), customer.getPwd(), authorities);
     }
     
