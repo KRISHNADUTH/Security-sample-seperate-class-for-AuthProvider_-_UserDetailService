@@ -60,18 +60,20 @@ public class JwtTokenValidationFilter extends OncePerRequestFilter {
                                 + authentication.toString());
                     }
                 }
-            } catch (Exception ex){
-                System.out.println("EXCEPPPPPPPTIOOOOOOOOOOOOOOOOOOOONNNNNNNNNNNNNNNNN     CCCCCCCAAAAAAAATTTTTCCCCCHHHHHHHHHEEEDDDDDDD");
-                System.out.println("Exception thrown is - "+ex.getClass().getName());
-                ErrorResponseDto errorResponseDto = new ErrorResponseDto(request.getServletPath(), HttpStatus.BAD_REQUEST, ex.getMessage(), new Date());
-                response.setStatus(HttpStatus.BAD_REQUEST.value()); 
+            } catch (Exception ex) {
+                System.out.println(
+                        "EXCEPPPPPPPTIOOOOOOOOOOOOOOOOOOOONNNNNNNNNNNNNNNNN     CCCCCCCAAAAAAAATTTTTCCCCCHHHHHHHHHEEEDDDDDDD");
+                System.out.println("Exception thrown is - " + ex.getClass().getName());
+                ErrorResponseDto errorResponseDto = new ErrorResponseDto(request.getServletPath(),
+                        HttpStatus.BAD_REQUEST, ex.getMessage(), new Date());
+                response.setStatus(HttpStatus.BAD_REQUEST.value());
                 response.setContentType("application/json");
                 response.setCharacterEncoding("UTF-8");
                 ObjectMapper objectMapper = new ObjectMapper();
-                
+
                 String errorResponseDtoJSON = objectMapper.writeValueAsString(errorResponseDto);
                 response.getWriter().write(errorResponseDtoJSON);
-                response.getWriter().flush(); 
+                response.getWriter().flush();
                 return;
             }
         }

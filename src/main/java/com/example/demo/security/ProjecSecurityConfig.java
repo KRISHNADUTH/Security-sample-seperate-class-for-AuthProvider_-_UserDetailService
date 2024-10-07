@@ -3,7 +3,9 @@ package com.example.demo.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.lang.Nullable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
@@ -18,20 +20,27 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import com.example.demo.dto.ErrorResponseDto;
 import com.example.demo.filter.CsrfCookieFilter;
 import com.example.demo.filter.JwtTokenGenerationFilter;
 import com.example.demo.filter.JwtTokenValidationFilter;
 import com.example.demo.filter.RequestValidationBeforeFilter;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.jsonwebtoken.io.IOException;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
-import java.util.Arrays;
+import java.util.*;
 import java.util.Collections;
 
 @Configuration
@@ -53,7 +62,21 @@ public class ProjecSecurityConfig {
                 .requestMatchers("/myCards").hasRole("USER")
                 .requestMatchers("/myLoans").hasRole("USER")
                 .anyRequest().authenticated() // All other requests must be authenticated
-        );
+                
+        ).exceptionHandling(handling -> handling
+                        .accessDeniedHandler(new AccessDeniedHandler(){
+                            @Override
+                            public void handle(HttpServletRequest request, HttpServletResponse response,
+                                    AccessDeniedException accessDeniedException) throws IOException, ServletException, JsonProcessingException, java.io.IOException {
+                                        ObjectMapper objectMapper = new ObjectMapper();
+                                        ErrorResponseDto errorResponseDto = new ErrorResponseDto(request.getServletPath(),HttpStatus.FORBIDDEN ,accessDeniedException.getMessage(), new Date());
+                                        // throw new ResponseStatusException(HttpStatusCode.valueOf(403), objectMapper.writeValueAsString(errorResponseDto));
+                                        response.setContentType("application/json");
+                                        response.setCharacterEncoding("UTF-8");
+                                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                        response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));
+                            }
+                        }));;
 
         http.cors(cors -> cors.configurationSource(new CorsConfigurationSource() {
 
