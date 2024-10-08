@@ -74,7 +74,7 @@ public class JwtTokenValidationFilter extends OncePerRequestFilter {
                 String errorResponseDtoJSON = objectMapper.writeValueAsString(errorResponseDto);
                 response.getWriter().write(errorResponseDtoJSON);
                 response.getWriter().flush();
-                return;
+                return; // This return statement is must if we have set response objects in any of the catch block.
             }
         }
         filterChain.doFilter(request, response);
