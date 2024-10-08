@@ -13,12 +13,14 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -34,16 +36,16 @@ import com.example.demo.filter.JwtTokenValidationFilter;
 import com.example.demo.filter.RequestValidationBeforeFilter;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 import java.util.*;
-import java.util.Collections;
 
 @Configuration
+@RequiredArgsConstructor
 public class ProjecSecurityConfig {
 
     @Bean
@@ -62,21 +64,38 @@ public class ProjecSecurityConfig {
                 .requestMatchers("/myCards").hasRole("USER")
                 .requestMatchers("/myLoans").hasRole("USER")
                 .anyRequest().authenticated() // All other requests must be authenticated
-                
+
         ).exceptionHandling(handling -> handling
-                        .accessDeniedHandler(new AccessDeniedHandler(){
-                            @Override
-                            public void handle(HttpServletRequest request, HttpServletResponse response,
-                                    AccessDeniedException accessDeniedException) throws IOException, ServletException, JsonProcessingException, java.io.IOException {
-                                        ObjectMapper objectMapper = new ObjectMapper();
-                                        ErrorResponseDto errorResponseDto = new ErrorResponseDto(request.getServletPath(),HttpStatus.FORBIDDEN ,accessDeniedException.getMessage(), new Date());
-                                        // throw new ResponseStatusException(HttpStatusCode.valueOf(403), objectMapper.writeValueAsString(errorResponseDto));
-                                        response.setContentType("application/json");
-                                        response.setCharacterEncoding("UTF-8");
-                                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                        response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));
-                            }
-                        }));;
+                .authenticationEntryPoint(new AuthenticationEntryPoint() {
+
+                    @Override
+                    public void commence(HttpServletRequest request, HttpServletResponse response,
+                            org.springframework.security.core.AuthenticationException authException)
+                            throws IOException, ServletException, java.io.IOException {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json");
+                        response.getWriter().write(
+                                "{\"error\": \"Unauthorized da mhymt\", \"message\": \"" + authException.getMessage() + "\"}");
+                    }
+
+                })
+                .accessDeniedHandler(new AccessDeniedHandler() {
+                    @Override
+                    public void handle(HttpServletRequest request, HttpServletResponse response,
+                            AccessDeniedException accessDeniedException)
+                            throws IOException, ServletException, JsonProcessingException, java.io.IOException {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        ErrorResponseDto errorResponseDto = new ErrorResponseDto(request.getServletPath(),
+                                HttpStatus.FORBIDDEN, accessDeniedException.getMessage(), new Date());
+                        // throw new ResponseStatusException(HttpStatusCode.valueOf(403),
+                        // objectMapper.writeValueAsString(errorResponseDto));
+                        response.setContentType("application/json");
+                        response.setCharacterEncoding("UTF-8");
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));
+                    }
+                }));
+        ;
 
         http.cors(cors -> cors.configurationSource(new CorsConfigurationSource() {
 
@@ -117,14 +136,18 @@ public class ProjecSecurityConfig {
 
         return http.build();
     }
-/*
-   @Bean
-    public InMemoryUserDetailsManager userDetailsManager() {
-        UserDetails user1 = User.builder().username("user1").password("{noop}12345").roles("employee").build();
-        UserDetails user2 = User.builder().username("user2").password("{noop}12345").roles("employee").build();
-        return new InMemoryUserDetailsManager(user1, user2);
-    }
-*/
+    /*
+     * @Bean
+     * public InMemoryUserDetailsManager userDetailsManager() {
+     * UserDetails user1 =
+     * User.builder().username("user1").password("{noop}12345").roles("employee").
+     * build();
+     * UserDetails user2 =
+     * User.builder().username("user2").password("{noop}12345").roles("employee").
+     * build();
+     * return new InMemoryUserDetailsManager(user1, user2);
+     * }
+     */
     // @Bean
     // public JdbcUserDetailsManager jdbcUserDetailsManager(DataSource dataSource){
     // return new JdbcUserDetailsManager(dataSource);
@@ -149,9 +172,11 @@ public class ProjecSecurityConfig {
     }
 
     @Bean
-    AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    AuthenticationManager authenticationManager(UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder) {
 
-        AuthenticationProvider authenticationProvider = new EazyBankUserNamePwdAuthenticationProvider(userDetailsService, passwordEncoder);
+        AuthenticationProvider authenticationProvider = new EazyBankUserNamePwdAuthenticationProvider(
+                userDetailsService, passwordEncoder);
         ProviderManager providerManager = new ProviderManager(authenticationProvider);
         providerManager.setEraseCredentialsAfterAuthentication(false);
         return providerManager;
