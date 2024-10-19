@@ -2,11 +2,8 @@ package com.example.demo.filter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Base64;
 
-import com.example.demo.model.User;
-import org.apache.logging.log4j.util.Base64Util;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.util.StringUtils;

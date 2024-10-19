@@ -11,15 +11,11 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -70,12 +66,17 @@ public class ProjecSecurityConfig {
 
                     @Override
                     public void commence(HttpServletRequest request, HttpServletResponse response,
-                            org.springframework.security.core.AuthenticationException authException)
+                            AuthenticationException authException)
                             throws IOException, ServletException, java.io.IOException {
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        ErrorResponseDto errorResponseDto = new ErrorResponseDto(request.getServletPath(),
+                                HttpStatus.UNAUTHORIZED, authException.getMessage(), new Date());
+                        // throw new ResponseStatusException(HttpStatusCode.valueOf(403),
+                        // objectMapper.writeValueAsString(errorResponseDto));
                         response.setContentType("application/json");
-                        response.getWriter().write(
-                                "{\"error\": \"Unauthorized da mhymt\", \"message\": \"" + authException.getMessage() + "\"}");
+                        response.setCharacterEncoding("UTF-8");
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));
                     }
 
                 })
@@ -95,7 +96,6 @@ public class ProjecSecurityConfig {
                         response.getWriter().write(objectMapper.writeValueAsString(errorResponseDto));
                     }
                 }));
-        ;
 
         http.cors(cors -> cors.configurationSource(new CorsConfigurationSource() {
 
@@ -116,7 +116,7 @@ public class ProjecSecurityConfig {
 
         CsrfTokenRequestAttributeHandler csrfTokenRequestAttributeHandler = new CsrfTokenRequestAttributeHandler();
         http.csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**", "/contact", "/apiLogin") // Disable CSRF for H2 console
+                .ignoringRequestMatchers("/h2-console/**", "/register", "/apiLogin") // Disable CSRF for H2 console
                 .csrfTokenRequestHandler(csrfTokenRequestAttributeHandler)
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
                 .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
